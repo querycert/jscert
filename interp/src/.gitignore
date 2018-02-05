@@ -1,5 +1,0 @@
-*.cmi
-*.cmx
-*.o
-extract
-run_jsbisect.ml

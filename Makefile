@@ -3,43 +3,23 @@
 # "settings.sh" and placing the right definitions into it, e.g.
 #    COQBIN=/var/tmp/charguer/v8.4/bin/
 #
-# The same applies for the path to tlc, e.g.: TLC=~/tlc/trunk
-#
-# Note that TLC should have no leading slash, whereas COQBIN should have one.
-# Note that if you rebind COQBIN you need to do the same in the TLC folder.
+# Note that COQBIN should have a leading slash.
 # Note that if you add a settings.sh file, you need to do "make clean" first.
 
-# Default paths for TLC and COQBIN, etc are as follows:
+# Default paths for COQBIN, etc are as follows:
 
 COQBIN=
-TLC=lib/tlc/src
-
-# Define FAST to be non empty for compiling Coq proofs faster
-FAST=
 
 # Use bash as the default shell
 SHELL=/bin/bash
 
-LAMBDAS5=~/Documents/data/LambdaS5/tests/s5
-SPIDERMONKEY=~/Mozilla/Central/Central/js/src/build_release/js
-NODEJS=/usr/bin/nodejs
-
-# Edit settings.sh to modify the default paths mentioned above
--include settings.sh
-
 
 #######################################################
 
-TLC_SRC=$(wildcard $(TLC)/*.v)
-TLC_VO=$(TLC_SRC:.v=.vo)
-
-
-#######################################################
-
-COQINCLUDES=-I coq -I $(TLC)
+COQINCLUDES=-R coq JsCert
 COQC=$(COQBIN)coqc
 COQDEP=$(COQBIN)coqdep
-COQFLAGS=-dont-load-proofs
+COQFLAGS=
 
 OCAMLBUILD=ocamlbuild
 OCAMLBUILDFLAGS=-cflags "-w -20"
@@ -48,81 +28,16 @@ OCAMLBUILDFLAGS=-cflags "-w -20"
 # MAIN SOURCE FILES
 
 JS_SRC=\
-	coq/Shared.v \
 	coq/JsNumber.v \
 	coq/JsSyntax.v \
-	coq/JsSyntaxAux.v \
-	coq/JsSyntaxInfos.v \
-	coq/JsCommon.v \
-	coq/JsPreliminary.v \
-	coq/JsCommonAux.v \
-	coq/JsInit.v \
-	coq/JsInterpreterMonads.v \
-	coq/JsInterpreter.v \
-        coq/JsInterpreterExtraction.v \
-	coq/JsPrettyInterm.v \
-	coq/JsPrettyIntermAux.v \
-	coq/JsPrettyRules.v \
-	coq/JsCorrectness.v
 
-
-JS_VO=$(JS_SRC:.v=.vo)
-
-
-# List for files that can be compiled without proofs in FAST=1 mode.
-
-ifneq ($(FAST),)
-	FAST_SRC=\
-#		coq/Shared.v \
-		coq/JsNumber.v \
-		coq/JsSyntax.v \
-		coq/JsSyntaxAux.v \
-		coq/JsSyntaxInfos.v \
-		coq/JsCommon.v \
-		coq/JsCommonAux.v \
-		coq/JsInit.v \
-		coq/JsPrettyInterm.v \
-		coq/JsPrettyIntermAux.v \
-		coq/JsPrettyRules.v
-endif
-
-FAST_VO=$(FAST_SRC:.v=.vo)
 
 #######################################################
 # MAIN TARGETS
 
-default: coq interpreter tags
+all: coq
 
-all: default interp/run_jsbisect
-
-debug: OCAMLBUILDFLAGS+=-tag debug
-debug: default interp/run_js.byte interp/prtest.cmo
-
-report:
-	cd interp; bisect-report -I _build -html ../report ../bisect*.out
-	firefox report/index.html || open report/index.html
-	rm bisect*.out
-
-tags: $(JS_SRC)
-	./gentags.sh
-
-.PHONY: all default debug report init tlc lib \
-        local nofast
-
-#######################################################
-# EXTERNAL LIBRARIES: TLC and Flocq
-
-init:
-	tools/git-hooks/install.sh .
-	git submodule update --init
-	-opam repo add coq-released https://coq.inria.fr/opam/released
-	opam pin -yn add JS_Parser "https://github.com/resource-reasoning/JS_Parser.git#v0.1.0"
-	opam pin -yn add coq-jscert .
-	opam install -y --deps-only coq-jscert
-
-lib: tlc
-
-tlc: $(TLC_VO)
+.PHONY: all
 
 #######################################################
 # Coq Compilation Implicit Rules
@@ -134,169 +49,23 @@ tlc: $(TLC_VO)
 	$(COQC) $(COQFLAGS) $(COQINCLUDES) $<
 
 #######################################################
-# FAST COMPILATION TOOL: coqj
-
-# Compile coqj : converts a .v file into a shallow .v file (without proofs)
-tools/coqj/coqj:
-	$(MAKE) -C tools/coqj coqj
-
-# Fast compilation of files in $(FAST_SRC)
-define FAST_RULE
-$(1).vo: tools/coqj/coqj
-	@mkdir -p _shallow/$(dir $1)
-	tools/coqj/coqj $(1).v > _shallow/$(1).v
-	$(COQC) -dont-load-proofs -I coq -I $(TLC) _shallow/$(1).v
-	mv _shallow/$(1).vo $(1).vo
-endef
-
-$(foreach filebase,$(FAST_SRC:.v=),$(eval $(call FAST_RULE,$(filebase))))
-
-# "make nofast" : Compilation mode to force the verification of all files
-nofast: $(FAST_VO:.vo=_full.vo)
-
-%_full.vo : %.v
-	echo $*
-	cp $*.v $*_full.v
-	$(COQC) -dont-load-proofs -I coq -I $(TLC) $*_full.v
-	rm $*_full.v
-
-#######################################################
-# JSCert Specific Rules
+# JsAst Specific Rules
 .PHONY: coq proof
 
-coq: $(JS_VO)
+coq:
+	@$(MAKE) -f Makefile.coq
 
-ifeq (proof,$(MAKECMDGOALS))
-$(JS_SRC): proof.patched
-endif
-
-proof.patched:
-	@echo -e "\e[1;41;5mWARNING! WARNING!\e[0m This command modifies files in coq/"
-	tools/runcheck.py patch
-	touch proof.patched
-
-proof: COQFLAGS=
-proof: proof.patched coq
-	rm -f proof.patched
-
-# Interpreter extraction spits out lots of *.ml,mli files
-# The option [-dont-load-proof] would extract all instance to an axiom! -- Martin.
-coq/JsInterpreterExtraction.vo: coq/JsInterpreterExtraction.v
-	$(COQC) $(subst -dont-load-proofs,,$(COQFLAGS)) $(COQINCLUDES) $<
-	-mkdir -p interp/src/extract
-	-rm -f interp/src/extract/.patched
-	mv *.ml interp/src/extract
-	mv *.mli interp/src/extract
-
-#######################################################
-# JsRef Interpreter Rules
-.PHONY: extract_interpreter interpreter
-
-# ; forces rule to be run, generates everything under extract dir
-interp/src/extract/%: coq/JsInterpreterExtraction.vo ;
-
-# Insert more useful error messages into Interpreter
-REFGETVALUE=$(shell cat interp/src/insert/ref_get_value)
-REFGETVALUE2=$(shell cat interp/src/insert/ref_get_value2)
-RUNOBJECTMETHOD=$(shell cat interp/src/insert/run_object_method)
-RUNOBJECTHEAP=$(shell cat interp/src/insert/run_object_heap_set_extensible)
-ENVGETIDENTIFIER=$(shell cat interp/src/insert/lexical_env_get_identifier_ref)
-
-interp/src/extract/JsInterpreter.ml.patched: interp/src/extract/JsInterpreter.ml
-	@echo \# Inserting useful error messages into $<
-	@perl -i -pe 's|res_res \(run_error s Coq_native_error_ref\)|$(REFGETVALUE)|g' $<
-	@perl -i -pe 's/\(\*\* val run_object_heap_set_extensible :/$(RUNOBJECTMETHOD)/g' $<
-	@perl -i -pe 's/type runs_type =/$(RUNOBJECTHEAP)/g' $<
-	@perl -i -pe 's/    result_val s \(ref_create_value \(Coq_value_prim Coq_prim_undef\) x0 str\)/$(ENVGETIDENTIFIER)/g' $<
-	@perl -i -pe 's|\(\*\* val run_expr_get_value :|$(REFGETVALUE2)|g' $<
-	touch $@
-
-# Sentinel file to check all interpreter source files have been patched
-# Should depend on each individual file patched sentinel
-# (Can also add rules to patch all files)
-interp/src/extract/.patched: interp/src/extract/JsInterpreter.ml.patched
-	touch $@
-
-extract_interpreter: interp/src/extract/.patched
-
-# .ml executables may be placed in a number of locations, tell make where to search for them
-vpath %.ml interp/src interp/top_level
-
-# interp/_tags contains OCaml-specific build rules for all interpreter variants
-interp/%.byte: extract_interpreter %.ml
-	cd interp && $(OCAMLBUILD) -use-ocamlfind $(OCAMLBUILDFLAGS) $(@F)
-interp/%.native: extract_interpreter %.ml
-	cd interp && $(OCAMLBUILD) -use-ocamlfind $(OCAMLBUILDFLAGS) $(@F)
-interp/%.cmo: %.ml
-	cd interp && $(OCAMLBUILD) -use-ocamlfind $(OCAMLBUILDFLAGS) $(@F)
-
-.PRECIOUS: interp/%.native
-interp/%: interp/%.native
-	ln -fs $(<F) $@
-
-interpreter: interp/run_js interp/top
-
-#######################################################
-# JSRef Bisect Mode
-
-interp/src/extract/JsInterpreterBisect.ml: interp/src/extract/JsInterpreter.ml extract_interpreter
-	perl -pe 's/ impossible/ (*BISECT-IGNORE*) impossible/g' $< > $@
-
-interp/src/run_jsbisect.ml: interp/src/run_js.ml
-	perl -pe 's/JsInterpreter\./JsInterpreterBisect\./g' $< > $@
-
-interp/run_jsbisect.native: interp/src/extract/JsInterpreterBisect.ml
-
-# interp/run_jsbisect is an implicit rule
-
-#######################################################
-# Interpreter run helpers
-.PHONY: run_tests run_tests_spidermonkey run_tests_lambdaS5 run_tests_nodejs
-
-run_tests: interpreter
-	./runtests.py --no_parasite
-
-run_tests_spidermonkey:
-	./runtests.py --spidermonkey --interp_path $(SPIDERMONKEY)
-
-run_tests_lambdaS5:
-	./runtests.py --lambdaS5 --interp_path $(LAMBDAS5)
-
-run_tests_nodejs:
-	./runtests.py --nodejs --interp_path $(NODEJS)
+install:
+	@$(MAKE) -f Makefile.coq install
 
 #######################################################
 # CLEAN
-.PHONY: clean clean_interp clean_all
+.PHONY: clean
 
-clean_interp:
-	-rm -f coq/JsInterpreterExtraction.vo
-	-rm -rf interp/src/extract
-	-rm -f interp/run_js interp/top
-	-rm -f interp/run_jsbisect interp/src/run_jsbisect.ml
-	cd interp && $(OCAMLBUILD) -quiet -clean
-
-clean: clean_interp
+clean:
 	-rm -f coq/*.{vo,glob,d}
 
-clean_all: clean
-	-rm -rf lib/flocq
-	find . -iname "*.vo" -exec rm {} \;
-	find . -iname "*.glob" -exec rm {} \;
-	find . -iname "*.d" -exec rm {} \;
+##
+Makefile.coq: Makefile $(JS_SRC)
+	@coq_makefile -f _CoqProject $(JS_SRC) -o Makefile.coq
 
-
-#######################################################
-# LOCAL: copy all tlc .vo files to the head folder
-
-local:
-	@$(foreach file, $(TLC_VO), cp $(file) $(notdir $(file));)
-
-#######################################################
-#######################################################
-
-
-ifeq ($(filter init clean% install%,$(MAKECMDGOALS)),)
--include $(JS_SRC:.v=.v.d)
--include $(TLC_SRC:.v=.v.d)
-endif

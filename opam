@@ -1,7 +1,7 @@
 opam-version: "1.2"
-name: "coq-jscert"
+name: "coq-jsast"
 version: "~unknown"
-maintainer: "Thomas Wood <thomas.wood09@imperial.ac.uk>"
+maintainer: "Jerome Simeon <jeromesimeon@me.com>"
 authors: [
   "Martin Bodin <martin.bodin@inria.fr>"
   "Arthur Charguéraud <arthur@chargueraud.org>"
@@ -12,22 +12,20 @@ authors: [
   "Alan Schmitt <alan.schmitt@inria.fr>"
   "Gareth Smith"
   "Thomas Wood <thomas.wood09@imperial.ac.uk>"
+  "Jerome Simeon <jeromesimeon@me.com>"
 ]
-
-homepage: "http://www.jscert.org/"
 bug-reports: "https://github.com/jscert/jscert/issues"
 license: "BSD"
 dev-repo: "https://github.com/jscert/jscert.git"
 build: [
   [make]
 ]
-available: [ ocaml-version >= "4.02" & ocaml-version < "4.04~" ]
+install: [
+  [make "install"]
+]
+remove: ["rm" "-R" "%{lib}%/coq/user-contrib/JsAst"]
+available: [ ocaml-version >= "4.05.0" ]
 depends: [
-  "ocamlfind" {build}
-  "coq" { >= "8.4" & < "8.5~" }
-  (* "coq-tlc" *)
-  "coq-flocq" { >= "2.1" & < "2.6~" }
-  "lwt"
-  "bisect"
-  "JS_Parser"
+  "coq" { >= "8.6" }
+  "coq-flocq" { >= "2.6" }
 ]

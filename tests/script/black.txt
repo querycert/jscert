@@ -1,7 +1,0 @@
-Object
-eval 
-Math
-sin
-cos
-for
-switch

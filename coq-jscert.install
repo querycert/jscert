@@ -1,3 +1,0 @@
-bin: [
-  "interp/run_js.native" { "run_js" }
-]

@@ -1,33 +1,11 @@
-lib/flocq
-settings.sh
-
 *.d
 *.vo
 *.glob
-_shallow
 
 TAGS
-*.xml
-
-*.native
-*.byte
-_build
-
-bisect*.out
-report
-
-/test_data/query_scripts/cabal-dev/*
-/test_data/query_scripts/dist/*
-/test_data/test_results.db
-/test_reports/*
 
 *~
 *#
 
-trace.log
-/coq/#JsPrettyRules.v#
-
-.tern-port
-
-proof.patched
-
+Makefile.coq
+Makefile.coq.conf

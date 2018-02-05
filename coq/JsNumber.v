@@ -1,5 +1,4 @@
 Set Implicit Arguments.
-Require Export Shared.
 Require Flocq.Appli.Fappli_IEEE Flocq.Appli.Fappli_IEEE_bits.
 
 
@@ -30,6 +29,7 @@ Parameter ln2 : number.
 (** ** Conversions on numbers *)
 
 (* LATER: implement definitions *)
+Require Import String.
 Parameter from_string : string -> number.
 Parameter to_string : number -> string.
 
@@ -62,14 +62,16 @@ Definition div : number -> number -> number :=
   Fappli_IEEE_bits.b64_div Fappli_IEEE.mode_NE.
 
 (* Todo: find comparison operator *)
+(*
 Global Instance number_comparable : Comparable number.
 Proof. Admitted.
-
+*)
 
 
 (**************************************************************)
 (** ** Conversions with Int32 *)
-
+Require Import Nat.
+Require Export TLC.LibCore.
 Parameter of_int : int -> number. (* LATER: this is quite complex. Should we make it precise? *)
 
 Parameter to_int32 : number -> int. (* Remark: extracted code could, for efficiency reasons, use Ocaml Int32 *) 
