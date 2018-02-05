@@ -1,7 +1,7 @@
 # JsAst
 
 This is a minimal JavaScript syntax tree carved out of the
-(JsCert)(https://github.com/jscert/jscert) project.
+[JsCert](https://github.com/jscert/jscert) project.
 
 ## Installation
 
