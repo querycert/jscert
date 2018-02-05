@@ -52,10 +52,10 @@ all: coq
 # JsAst Specific Rules
 .PHONY: coq proof
 
-coq:
+coq: Makefile.coq
 	@$(MAKE) -f Makefile.coq
 
-install:
+install: Makefile.coq
 	@$(MAKE) -f Makefile.coq install
 
 #######################################################
