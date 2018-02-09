@@ -1,11 +1,9 @@
-Set Implicit Arguments.
 Require Flocq.Appli.Fappli_IEEE Flocq.Appli.Fappli_IEEE_bits.
-
 
 (**************************************************************)
 (** ** Type for number (IEEE floats) *)
 
-Definition number : Type :=
+Definition number : Set :=
   Fappli_IEEE_bits.binary64.
 
 
@@ -71,7 +69,7 @@ Proof. Admitted.
 (**************************************************************)
 (** ** Conversions with Int32 *)
 Require Import Nat.
-Require Export TLC.LibCore.
+Require Import TLC.LibCore.
 Parameter of_int : int -> number. (* LATER: this is quite complex. Should we make it precise? *)
 
 Parameter to_int32 : number -> int. (* Remark: extracted code could, for efficiency reasons, use Ocaml Int32 *) 
