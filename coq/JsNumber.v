@@ -41,7 +41,6 @@ Definition min_value : number :=
 (** ** Conversions on numbers *)
 
 Require Import String.
-Parameter ocaml_float : Set.
 Definition float_triple : Set := (bool * positive * Z).
 Definition float_triple_to_b64 (ft:float_triple) : number :=
   let '(sign, m, e) := ft in
@@ -70,30 +69,20 @@ Definition float_triple_to_b64 (ft:float_triple) : number :=
 Parameter from_string : string -> number.
 Parameter to_string : number -> string.
 
-Parameter from_float : ocaml_float -> number.
-Parameter to_float : number -> ocaml_float.
-
 (**************************************************************)
 (** ** Unary operations on numbers *)
 
 (* LATER: find definitions in Flocq *)
 
-Definition neg : number -> number :=
+Definition number_neg : number -> number :=
   Fappli_IEEE_bits.b64_opp.
-Parameter floor : number -> number.  (** NOT IN FLOCQ maybe in the longer future *)
-Definition b64_abs : number -> number :=
+Parameter number_floor : number -> number.  (** Note: not in flocq maybe in the longer future *)
+Definition number_b64_abs : number -> number :=
   Fappli_IEEE.Babs 53 1024 pair.
-Definition absolute : number -> number := b64_abs.
-
-Definition lt_bool (n1 n2 : number) :=
-  match Fappli_IEEE.Bcompare _ _ n1 n2 with
-  | Some Lt => true
-  | Some _ => false
-  | None => false (**r None is for nan, always false, except for not equal *)
-  end.
+Definition number_absolute : number -> number := number_b64_abs.
 
 (* This sign function is consistent with Math.sign in JavaScript *)
-Definition sign : number -> number :=
+Definition number_sign : number -> number :=
   fun x => match x with
   | Fappli_IEEE.B754_nan _ _ s _ => x
   | Fappli_IEEE.B754_zero _ _ s => x
@@ -107,18 +96,81 @@ Definition sign : number -> number :=
 (**************************************************************)
 (** ** Binary operations on numbers *)
 
-Definition add : number -> number -> number :=
+Definition number_add : number -> number -> number :=
   Fappli_IEEE_bits.b64_plus Fappli_IEEE.mode_NE.
 
-Definition sub : number -> number -> number :=
+Definition number_sub : number -> number -> number :=
   Fappli_IEEE_bits.b64_minus Fappli_IEEE.mode_NE.
 
-Parameter fmod : number -> number -> number. (* todo: bind *)
-(** Note: may come in next version of Flocq *)
+Parameter number_mod : number -> number -> number. (** Note: may come in next version of Flocq *)
 
-Definition mult : number -> number -> number :=
+Definition number_mult : number -> number -> number :=
   Fappli_IEEE_bits.b64_mult Fappli_IEEE.mode_NE.
 
-Definition div : number -> number -> number :=
+Definition number_div : number -> number -> number :=
   Fappli_IEEE_bits.b64_div Fappli_IEEE.mode_NE.
+
+Require Import List.
+(** Defines additional operations on FLOATs *)
+(** Unary operations *)
+
+Parameter number_sqrt : number -> number. (** In Flocq *)
+Parameter number_exp : number -> number.
+Parameter number_log : number -> number.
+Parameter number_log10 : number -> number.
+Parameter number_ceil : number -> number.
+Parameter number_eq : number -> number -> bool. (* TODO by Jerome pattern matching on B754 *)
+
+Conjecture number_eq_correct :
+  forall f1 f2, (number_eq f1 f2 = true <-> f1 = f2).
+
+Require Import EquivDec.
+Lemma number_eq_dec : EqDec number eq.
+Proof.
+  unfold EqDec.
+  intros x y.
+  case_eq (number_eq x y); intros eqq.
+  + left.
+    f_equal.
+    apply number_eq_correct in eqq.
+    trivial.
+  + right; intros eqq2.
+    red in eqq2.
+    apply number_eq_correct in eqq2.
+    congruence.
+Defined.
+  
+Parameter number_pow : number -> number -> number.
+Parameter number_min : number -> number -> number. (** Check in JS spec what happens for min/max *)
+Parameter number_max : number -> number -> number.
+Parameter number_ne : number -> number -> bool.
+Definition number_lt (n1 n2 : number) :=
+  match Fappli_IEEE.Bcompare _ _ n1 n2 with
+  | Some Lt => true
+  | Some _ => false
+  | None => false (**r None is for nan, always false, except for not equal *)
+  end.
+Parameter number_le : number -> number -> bool.
+Parameter number_gt : number -> number -> bool.
+Parameter number_ge : number -> number -> bool.
+
+Require Import ZArith.
+Parameter number_of_int : Z -> number. (** Binary normalize *)
+Parameter number_truncate : number -> Z. (** Do like parsing ... *)
+
+Definition number_list_min (l:list number) : number :=
+  fold_right (fun x y => number_min x y) infinity l.
+
+Definition number_list_max (l:list number) : number :=
+  fold_right (fun x y => number_max x y) neg_infinity l.
+
+Definition number_list_sum (l:list number) : number :=
+  fold_right (fun x y => number_add x y) zero l.
+
+Definition number_list_arithmean (l:list number) : number :=
+  let ll := List.length l in
+  match ll with
+  | O => zero
+  | _ => number_div (number_list_sum l) (number_of_int (Z_of_nat ll))
+  end.
 
