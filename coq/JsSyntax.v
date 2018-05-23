@@ -130,6 +130,7 @@ with stat :=
   | stat_label : string -> stat -> stat
   | stat_block : list stat -> stat
   | stat_var_decl : list (string * option expr) -> stat
+  | stat_let_decl : list (string * option expr) -> stat
   | stat_if : expr -> stat -> option stat -> stat
   | stat_do_while : label_set -> stat -> expr -> stat
   | stat_while : label_set -> expr -> stat -> stat
@@ -141,6 +142,7 @@ with stat :=
   | stat_try : stat -> option (string * stat) -> option stat -> stat (* Note: try s1 [catch (x) s2] [finally s3] *)
   | stat_for : label_set -> option expr -> option expr -> option expr -> stat -> stat (* Note: for (e1; e2; e3) stat *)
   | stat_for_var : label_set -> list (string * option expr) -> option expr -> option expr -> stat -> stat (* Note: for (var ...; e2; e3) stat *)
+  | stat_for_let : label_set -> list (string * option expr) -> option expr -> option expr -> stat -> stat (* Note: for (let ...; e2; e3) stat *)
   | stat_for_in : label_set -> expr -> expr -> stat -> stat (* Note: for (e1 in e2) stat *)
   | stat_for_in_var : label_set -> string -> option expr -> expr -> stat -> stat (*  Note: for (var x [= e1] in e2) stat *)
   | stat_debugger : stat
