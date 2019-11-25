@@ -145,6 +145,7 @@ with stat :=
   | stat_for_let : label_set -> list (string * option expr) -> option expr -> option expr -> stat -> stat (* Note: for (let ...; e2; e3) stat *)
   | stat_for_in : label_set -> expr -> expr -> stat -> stat (* Note: for (e1 in e2) stat *)
   | stat_for_in_var : label_set -> string -> option expr -> expr -> stat -> stat (*  Note: for (var x [= e1] in e2) stat *)
+  | stat_for_in_let : label_set -> string -> option expr -> expr -> stat -> stat (*  Note: for (let x [= e1] in e2) stat *)
   | stat_debugger : stat
   | stat_switch : label_set -> expr -> switchbody -> stat
 
