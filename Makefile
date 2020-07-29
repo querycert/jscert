@@ -65,6 +65,10 @@ install: Makefile.coq
 clean:
 	-rm -f coq/*.{vo,glob,d}
 
+cleanall:
+	@$(MAKE) clean
+	-rm -f Makefile.coq Makefile.coq.conf .Makefile.coq.d .coqdeps.d
+
 ##
 Makefile.coq: Makefile $(JS_SRC)
 	@coq_makefile -f _CoqProject $(JS_SRC) -o Makefile.coq
