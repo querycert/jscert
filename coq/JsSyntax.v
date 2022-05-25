@@ -1,6 +1,7 @@
 Set Implicit Arguments.
 Require Export Ascii String.
 Require JsNumber.
+Require Import ZArith.
 Notation "'number'" := (JsNumber.number).
 
 
@@ -63,7 +64,8 @@ Inductive literal :=
   | literal_null : literal
   | literal_bool : bool -> literal
   | literal_number : number -> literal
-  | literal_string : string -> literal.
+  | literal_string : string -> literal
+  | literal_bigint : Z -> literal.
 
 (** Labels literals used by break and continue keywords,
     including the special "empty" label. *)
@@ -187,3 +189,12 @@ Coercion stat_expr : expr >-> stat.
 Coercion label_string : string >-> label.
 
 
+Inductive topdecl :=
+| strictmode : topdecl                            (** strict mode declaration *)
+| comment : string -> topdecl                     (** comment *)
+| elementdecl : element -> topdecl                (** Program element *)
+| classdecl : string -> list funcdecl -> topdecl  (** Class declarations *)
+| constdecl : string -> expr -> topdecl           (** Constant declarations *)
+.
+
+Definition module := list topdecl.
